@@ -1,6 +1,27 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#include "wtypes.h"
+
 #include <iostream>
+
+
+// Get the horizontal and vertical screen sizes in pixel
+void GetDesktopResolution(int& horizontal, int& vertical)
+{
+   RECT desktop;
+   // Get a handle to the desktop window
+   const HWND hDesktop = GetDesktopWindow();
+   // Get the size of screen to the variable desktop
+   GetWindowRect(hDesktop, &desktop);
+   // The top left corner will have coordinates (0,0)
+   // and the bottom right corner will have coordinates
+   // (horizontal, vertical)
+   horizontal = desktop.right;
+   vertical = desktop.bottom;
+}
+
+
 void main(int argc,char *argv[])
 {
     int c;
@@ -8,7 +29,13 @@ void main(int argc,char *argv[])
 	CvCapture* cv_cap;
 	IplImage* color_img2;
 	CvCapture* cv_cap2;
+	int horizontal = 0;
+	int vertical = 0;
+	GetDesktopResolution(horizontal, vertical);
+	
 
+
+	//User input for Camera Selection
 	/*
 	for (int i = 0; i < 3; i++){
 		cv_cap = cvCaptureFromCAM(i);
