@@ -64,7 +64,7 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	} else if (id == 2) {
 		namedWindow("MyVideo2",CV_WINDOW_NORMAL); //create a window called "MyVideo"
 		resizeWindow("MyVideo2", 720, 540);
-		moveWindow("MyVideo2", 960,0);
+		moveWindow("MyVideo2", 960,540);
 	}
 	const string name = "MyVideo" + std::to_string(static_cast<long long>(id));
 
