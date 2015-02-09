@@ -1,10 +1,21 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/opencv.hpp"
 
 #include "wtypes.h"
 
 #include <iostream>
+#include <Windows.h>
 
+using namespace cv;
+
+#define MAX_THREADS 3
+
+struct thread_data
+{
+	int t_id;
+	thread_data(int id) : t_id(id) {}
+};
 
 // Get the horizontal and vertical screen sizes in pixel
 void GetDesktopResolution(int& horizontal, int& vertical)
@@ -21,85 +32,88 @@ void GetDesktopResolution(int& horizontal, int& vertical)
    vertical = desktop.bottom;
 }
 
-
-void main(int argc,char *argv[])
+DWORD WINAPI thread_func(LPVOID lpParameter)
 {
-    int c;
-    IplImage* color_img;
-	CvCapture* cv_cap;
-	IplImage* color_img2;
-	CvCapture* cv_cap2;
+	thread_data *td = (thread_data*)lpParameter;
+ 	int c;
 	int horizontal = 0;
 	int vertical = 0;
+	int id = td->t_id;
 	GetDesktopResolution(horizontal, vertical);
-	
+
+	VideoCapture cap(id); // open the video camera no. 0
+
+	if (!cap.isOpened())  // if not success, exit program
+	{
+		std::cout << "Cannot open the video cam" << std::endl;
+		return -1;
+	}
+
+	double dWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
+	double dHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+	std::cout << "id: " << id << " Frame size : " << dWidth << " x " << dHeight << std::endl;
+	std::cout << "monitor size: " << horizontal << "x by " << vertical <<  "y" << std::endl;
+	if (id == 0){
+		namedWindow("MyVideo0",CV_WINDOW_NORMAL); //create a window called "MyVideo"
+		resizeWindow("MyVideo0", 720, 540);
+		moveWindow("MyVideo0", 0,0);
+	} else if (id == 1) {
+		namedWindow("MyVideo1",CV_WINDOW_NORMAL); //create a window called "MyVideo"
+		resizeWindow("MyVideo1", 720, 540);
+		moveWindow("MyVideo1", 0,540);
+	} else if (id == 2) {
+		namedWindow("MyVideo2",CV_WINDOW_NORMAL); //create a window called "MyVideo"
+		resizeWindow("MyVideo2", 720, 540);
+		moveWindow("MyVideo2", 960,0);
+	}
+	const string name = "MyVideo" + std::to_string(static_cast<long long>(id));
+
+	std::wstring stemp = std::wstring(name.begin(), name.end());
+	LPCWSTR sw = stemp.c_str();
+	HWND win_handle = FindWindow(0, sw);
+	if (!win_handle)
+	{
+		printf("Failed FindWindow\n");
+	}
+
+	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
+	ShowWindow(win_handle, SW_SHOW);
+
+	Mat frame;
+	for(;;) {
+		cap >> frame; // get a new frame from camera
+		//imshow("MyVideo", frame);
+		imshow(name, frame);
+		c = waitKey(1000/24); // wait 10 ms or for key stroke
+		if(c == 27)
+			break; // if ESC, break and quit
+	}
+
+	return 0;
+}
 
 
-	//User input for Camera Selection
-	/*
-	for (int i = 0; i < 3; i++){
-		cv_cap = cvCaptureFromCAM(i);
-		if (cv_cap == NULL){
-			std::cout << "no camera!" << std::endl;
-		} else {
-			break;
+int main(int argc,char *argv[])
+{
+	HANDLE  hThreadArray[MAX_THREADS]; 
+
+	for (int i=0; i < MAX_THREADS; i++)
+	{
+		hThreadArray[i] = CreateThread(NULL, 0, thread_func, new thread_data(i) , 0, 0);
+		if (hThreadArray[i] == NULL) 
+		{
+			//ErrorHandler(TEXT("CreateThread"));
+			ExitProcess(3);
 		}
 	}
-	*/
-	cv_cap = cvCaptureFromCAM(0);
-	cv_cap2 = cvCaptureFromCAM(1);
-    cvNamedWindow("Video",0); // create window
-	cvNamedWindow("Video2",0); // create window
-    for(;;) {
-        color_img = cvQueryFrame(cv_cap); // get frame
-		color_img2 = cvQueryFrame(cv_cap2); // get frame
-		//if(color_img != 0){
-        if((color_img != 0) && (color_img2 != 0)){
-            cvShowImage("Video", color_img); // show frame
-			cvShowImage("Video2", color_img2); // show frame
-		}
-        c = cvWaitKey(10); // wait 10 ms or for key stroke
-        if(c == 27)
-            break; // if ESC, break and quit
+	WaitForMultipleObjects(MAX_THREADS, hThreadArray, TRUE, INFINITE);
+
+    // Close all thread handles and free memory allocations.
+    for(int i=0; i<MAX_THREADS; i++)
+    {
+        CloseHandle(hThreadArray[i]);
     }
-    /* clean up */
-    cvReleaseCapture( &cv_cap );
-	cvReleaseCapture( &cv_cap2 );
-    cvDestroyWindow("Video");
-	cvDestroyWindow("Video2");
+
+	return 0;
 }
 
-
-
-/*
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <iostream>
-
-using namespace cv;
-using namespace std;
-
-int main( int argc, char** argv )
-{
-    if( argc != 2)
-    {
-     cout <<" Usage: display_image ImageToLoadAndDisplay" << endl;
-     return -1;
-    }
-
-    Mat image;
-    image = imread(argv[1], IMREAD_COLOR); // Read the file
-
-    if(! image.data ) // Check for invalid input
-    {
-        cout << "Could not open or find the image" << std::endl ;
-        return -1;
-    }
-
-    namedWindow( "Display window", WINDOW_AUTOSIZE ); // Create a window for display.
-    imshow( "Display window", image ); // Show our image inside it.
-
-    waitKey(0); // Wait for a keystroke in the window
-    return 0;
-}
-*/
