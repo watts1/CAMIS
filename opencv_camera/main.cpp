@@ -79,11 +79,15 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
 
+	const string v_name = "View" + std::to_string(static_cast<long long>(id)) + ".avi";
+	VideoWriter video(v_name,CV_FOURCC('X','2','6','4'),24, Size(dWidth,dHeight),true);
+
 	Mat frame;
 	for(;;) {
 		cap >> frame; // get a new frame from camera
 		//imshow("MyVideo", frame);
 		imshow(name, frame);
+		video.write(frame);
 		c = waitKey(1000/24); // wait 10 ms or for key stroke
 		if(c == 27)
 			break; // if ESC, break and quit
