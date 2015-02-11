@@ -59,18 +59,23 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	double dHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
 	std::cout << "id: " << id << " Frame size : " << dWidth << " x " << dHeight << std::endl;
 	std::cout << "monitor size: " << horizontal << "x by " << vertical <<  "y" << std::endl;
+	std::cout << "ID is: " << id << std::endl;
 	if (id == 0){
 		namedWindow("MyVideo0",CV_WINDOW_NORMAL); //create a window called "MyVideo"
-		resizeWindow("MyVideo0", 720, 540);
 		moveWindow("MyVideo0", 0,0);
+		resizeWindow("MyVideo0", 704, 502);
+		//resizeWindow("MyVideo0", dWidth, dHeight);
 	} else if (id == 1) {
 		namedWindow("MyVideo1",CV_WINDOW_NORMAL); //create a window called "MyVideo"
-		resizeWindow("MyVideo1", 720, 540);
 		moveWindow("MyVideo1", 0,540);
+		resizeWindow("MyVideo1", 704, 502);
+		//resizeWindow("MyVideo1", dWidth, dHeight);
 	} else if (id == 2) {
 		namedWindow("MyVideo2",CV_WINDOW_NORMAL); //create a window called "MyVideo"
-		resizeWindow("MyVideo2", 720, 540);
-		moveWindow("MyVideo2", 960,540);
+		moveWindow("MyVideo2", 720,540);
+		resizeWindow("MyVideo2", 704, 502);
+		//moveWindow("MyVideo2", 960,540);
+		
 	}
 	const string name = "MyVideo" + std::to_string(static_cast<long long>(id));
 
@@ -130,13 +135,17 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 
 		//if (wait < 0)
 		//	wait = 0;
-		if (wait > 100)
-			wait = 100;
+		if (wait > 96)
+			wait = 96;
 
-		std::cout << id <<" wait time is: " << wait << std::endl;
+		//std::cout << id <<" wait time is: " << wait << std::endl;
 		//std::cout << "tick time is: " << time2 << std::endl;
 		//std::cout << "actial wait time is: " << 41-wait << std::endl;
-		c = waitKey(101-wait); // wait 10 ms or for key stroke
+		//GetSystemTime(&st);
+		c = waitKey(97-wait); // wait 10 ms or for key stroke
+		//GetSystemTime(&st2);
+
+		//std::cout << id <<  " wait key took: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 		//c = waitKey(41); // wait 10 ms or for key stroke
 		if(c == 27)
 			break; // if ESC, break and quit
@@ -152,6 +161,26 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 
 int main(int argc,char *argv[])
 {
+	//Mat bg;
+	//bg = cv::Scalar(0,0,0);
+	Mat bg(1920, 1280, CV_8UC3, Scalar(0,0,0));
+
+	namedWindow("BG",CV_WINDOW_NORMAL); //create a window called "MyVideo"
+	resizeWindow("BG", 1920, 1280);
+	moveWindow("BG", 0,0);
+
+	HWND win_handle = FindWindow(0, L"BG");
+	if (!win_handle)
+	{
+		printf("Failed FindWindow\n");
+	}
+
+	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
+	//SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE));
+	ShowWindow(win_handle, SW_SHOW);
+
+
+
 	HANDLE  hThreadArray[MAX_THREADS]; 
 
 	for (int i=0; i < MAX_THREADS; i++)
@@ -163,7 +192,11 @@ int main(int argc,char *argv[])
 			ExitProcess(3);
 		}
 	}
+
+	imshow("BG", bg);
+	waitKey(1);
 	WaitForMultipleObjects(MAX_THREADS, hThreadArray, TRUE, INFINITE);
+
 
     // Close all thread handles and free memory allocations.
     for(int i=0; i<MAX_THREADS; i++)
