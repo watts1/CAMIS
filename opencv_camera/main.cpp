@@ -39,6 +39,12 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	int horizontal = 0;
 	int vertical = 0;
 	int id = td->t_id;
+
+	//
+	SYSTEMTIME st;
+	SYSTEMTIME st2;
+	//
+
 	GetDesktopResolution(horizontal, vertical);
 
 	VideoCapture cap(id); // open the video camera no. 0
@@ -80,17 +86,64 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	ShowWindow(win_handle, SW_SHOW);
 
 	const string v_name = "View" + std::to_string(static_cast<long long>(id)) + ".avi";
-	VideoWriter video(v_name,CV_FOURCC('X','2','6','4'),24, Size(dWidth,dHeight),true);
+	VideoWriter video(v_name,CV_FOURCC('x','v','i','d'),10, Size(dWidth,dHeight),true);
 
+	int time1;
+	int time2;
+	int wait;
 	Mat frame;
 	for(;;) {
+		GetSystemTime(&st);
 		cap >> frame; // get a new frame from camera
+		//GetSystemTime(&st2);
+		//if(id == 0)
+		//	std::cout << "cap time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
+
+		//std::cout << "size of mat is: " << sizeof(frame) << std::endl;
+
 		//imshow("MyVideo", frame);
+		//GetSystemTime(&st);
 		imshow(name, frame);
+		//GetSystemTime(&st2);
+
+		//if(id == 0)
+		//	std::cout << "imshow time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
+
+		//GetSystemTime(&st);
 		video.write(frame);
-		c = waitKey(1000/24); // wait 10 ms or for key stroke
+		//GetSystemTime(&st2);
+		//if(id == 0)
+		///	std::cout << "write time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
+		
+		//GetSystemTime(&st);
+		GetSystemTime(&st2);
+
+		//std::cout << id << " time 2 is: " << time2 << std::endl;
+
+		//std::cout << id << " Time1 is: " << st.wMilliseconds << std::endl;
+		//std::cout << id << " Time2 is: " << st2.wMilliseconds << std::endl;
+
+		wait = st2.wMilliseconds - st.wMilliseconds;
+		if (wait < 0)
+			wait = wait + 1000;
+		//int seconds = st2.wSecond - st.wSecond;
+
+		//if (wait < 0)
+		//	wait = 0;
+		if (wait > 100)
+			wait = 100;
+
+		std::cout << id <<" wait time is: " << wait << std::endl;
+		//std::cout << "tick time is: " << time2 << std::endl;
+		//std::cout << "actial wait time is: " << 41-wait << std::endl;
+		c = waitKey(101-wait); // wait 10 ms or for key stroke
+		//c = waitKey(41); // wait 10 ms or for key stroke
 		if(c == 27)
 			break; // if ESC, break and quit
+		//GetSystemTime(&st2);
+
+		//if(id == 0)
+			//std::cout << "wait time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 	}
 
 	return 0;
