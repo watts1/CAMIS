@@ -40,15 +40,15 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	int vertical = 0;
 	int id = td->t_id;
 
-	//
+	// Timer objects 
 	SYSTEMTIME st;
 	SYSTEMTIME st2;
-	//
+	SYSTEMTIME st3;
+	SYSTEMTIME st4;
 
-	GetDesktopResolution(horizontal, vertical);
+	//GetDesktopResolution(horizontal, vertical);
 
 	VideoCapture cap(id); // open the video camera no. 0
-
 	if (!cap.isOpened())  // if not success, exit program
 	{
 		std::cout << "Cannot open the video cam" << std::endl;
@@ -59,7 +59,6 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	double dHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
 	std::cout << "id: " << id << " Frame size : " << dWidth << " x " << dHeight << std::endl;
 	std::cout << "monitor size: " << horizontal << "x by " << vertical <<  "y" << std::endl;
-	std::cout << "ID is: " << id << std::endl;
 	if (id == 0){
 		namedWindow("MyVideo0",CV_WINDOW_NORMAL); //create a window called "MyVideo"
 		moveWindow("MyVideo0", 0,0);
@@ -98,24 +97,21 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	int wait;
 	Mat frame;
 	for(;;) {
+		//GetSystemTime(&st3);
 		GetSystemTime(&st);
 		cap >> frame; // get a new frame from camera
 		//GetSystemTime(&st2);
 		//if(id == 0)
 		//	std::cout << "cap time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 
-		//std::cout << "size of mat is: " << sizeof(frame) << std::endl;
-
-		//imshow("MyVideo", frame);
 		//GetSystemTime(&st);
 		imshow(name, frame);
 		//GetSystemTime(&st2);
-
 		//if(id == 0)
 		//	std::cout << "imshow time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 
 		//GetSystemTime(&st);
-		video.write(frame);
+		//video.write(frame);
 		//GetSystemTime(&st2);
 		//if(id == 0)
 		///	std::cout << "write time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
@@ -123,23 +119,15 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 		//GetSystemTime(&st);
 		GetSystemTime(&st2);
 
-		//std::cout << id << " time 2 is: " << time2 << std::endl;
-
-		//std::cout << id << " Time1 is: " << st.wMilliseconds << std::endl;
-		//std::cout << id << " Time2 is: " << st2.wMilliseconds << std::endl;
-
 		wait = st2.wMilliseconds - st.wMilliseconds;
 		if (wait < 0)
 			wait = wait + 1000;
 		//int seconds = st2.wSecond - st.wSecond;
 
-		//if (wait < 0)
-		//	wait = 0;
 		if (wait > 96)
 			wait = 96;
 
 		//std::cout << id <<" wait time is: " << wait << std::endl;
-		//std::cout << "tick time is: " << time2 << std::endl;
 		//std::cout << "actial wait time is: " << 41-wait << std::endl;
 		//GetSystemTime(&st);
 		c = waitKey(97-wait); // wait 10 ms or for key stroke
@@ -147,12 +135,14 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 
 		//std::cout << id <<  " wait key took: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 		//c = waitKey(41); // wait 10 ms or for key stroke
-		if(c == 27)
+		if(c == 32)
 			break; // if ESC, break and quit
 		//GetSystemTime(&st2);
 
 		//if(id == 0)
 			//std::cout << "wait time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
+		//GetSystemTime(&st4);
+		//std::cout << id << " loop time is: " << st4.wMilliseconds - st3.wMilliseconds << std::endl;
 	}
 
 	return 0;
@@ -161,12 +151,9 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 
 int main(int argc,char *argv[])
 {
-	//Mat bg;
-	//bg = cv::Scalar(0,0,0);
-	Mat bg(1920, 1280, CV_8UC3, Scalar(0,0,0));
+	Mat bg(1920, 1280, CV_8UC3, Scalar(0,0,0)); // Black background image
 
-	namedWindow("BG",CV_WINDOW_NORMAL); //create a window called "MyVideo"
-	resizeWindow("BG", 1920, 1280);
+	namedWindow("BG",CV_WINDOW_NORMAL); //create background window
 	moveWindow("BG", 0,0);
 
 	HWND win_handle = FindWindow(0, L"BG");
@@ -175,11 +162,9 @@ int main(int argc,char *argv[])
 		printf("Failed FindWindow\n");
 	}
 
-	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
-	//SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE));
+	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE));
+	SetWindowPos(win_handle, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
 	ShowWindow(win_handle, SW_SHOW);
-
-
 
 	HANDLE  hThreadArray[MAX_THREADS]; 
 
@@ -192,17 +177,23 @@ int main(int argc,char *argv[])
 			ExitProcess(3);
 		}
 	}
-
+	
+	Sleep(2000); // A wait is required to prevent artifacts
 	imshow("BG", bg);
 	waitKey(1);
-	WaitForMultipleObjects(MAX_THREADS, hThreadArray, TRUE, INFINITE);
 
+	WaitForMultipleObjects(MAX_THREADS, hThreadArray, FALSE, INFINITE);
 
     // Close all thread handles and free memory allocations.
     for(int i=0; i<MAX_THREADS; i++)
     {
-        CloseHandle(hThreadArray[i]);
-    }
+        int  p = CloseHandle(hThreadArray[i]);
+		if (p == 0) {
+			std::cout << "Failed to close thread" << std::endl;
+		}
+	}
+
+	std::cout  << "EXITING" << std::endl;
 
 	return 0;
 }
