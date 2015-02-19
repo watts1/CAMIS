@@ -43,38 +43,40 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	// Timer objects 
 	SYSTEMTIME st;
 	SYSTEMTIME st2;
-	SYSTEMTIME st3;
-	SYSTEMTIME st4;
+//	SYSTEMTIME st3;
+//	SYSTEMTIME st4;
 
 	//GetDesktopResolution(horizontal, vertical);
 
 	VideoCapture cap(id); // open the video camera no. 0
 	if (!cap.isOpened())  // if not success, exit program
 	{
-		std::cout << "Cannot open the video cam" << std::endl;
+		std::cout << id << " Cannot open the video cam" << std::endl;
 		return -1;
 	}
-
+	cap.set(CV_CAP_PROP_FRAME_WIDTH,640); //get the width of frames of the video
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT,480); //get the height of frames of the video
 	double dWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
 	double dHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
-	std::cout << "id: " << id << " Frame size : " << dWidth << " x " << dHeight << std::endl;
-	std::cout << "monitor size: " << horizontal << "x by " << vertical <<  "y" << std::endl;
+	double fps = cap.get(CV_CAP_PROP_FPS); //get the fps of the webcam
+	std::cout << "id: " << id << " Frame size: " << dWidth << " x " << dHeight << std::endl;
+	//std::cout << "id: " << id << " FPS: " << fps << std::endl;
+	//std::cout << "monitor size: " << horizontal << "x by " << vertical <<  "y" << std::endl;
 	if (id == 0){
-		namedWindow("MyVideo0",CV_WINDOW_NORMAL); //create a window called "MyVideo"
-		moveWindow("MyVideo0", 0,0);
-		resizeWindow("MyVideo0", 704, 502);
-		//resizeWindow("MyVideo0", dWidth, dHeight);
+		namedWindow("MyVideo0",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO); //create a window called "MyVideo"
+		moveWindow("MyVideo0", 0+320,540);
+		//resizeWindow("MyVideo0", 704, 502);
+		resizeWindow("MyVideo0", 666, 500);
 	} else if (id == 1) {
-		namedWindow("MyVideo1",CV_WINDOW_NORMAL); //create a window called "MyVideo"
-		moveWindow("MyVideo1", 0,540);
-		resizeWindow("MyVideo1", 704, 502);
-		//resizeWindow("MyVideo1", dWidth, dHeight);
+		namedWindow("MyVideo1",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO); //create a window called "MyVideo"
+		moveWindow("MyVideo1", 686+320,540);
+		//resizeWindow("MyVideo1", 704, 502);
+		resizeWindow("MyVideo1", 666, 500);
 	} else if (id == 2) {
-		namedWindow("MyVideo2",CV_WINDOW_NORMAL); //create a window called "MyVideo"
-		moveWindow("MyVideo2", 720,540);
-		resizeWindow("MyVideo2", 704, 502);
-		//moveWindow("MyVideo2", 960,540);
-		
+		namedWindow("MyVideo2",CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO); //create a window called "MyVideo"
+		moveWindow("MyVideo2", 0+320,0);
+		//resizeWindow("MyVideo2", 704, 502);
+		resizeWindow("MyVideo2", 666, 500);
 	}
 	const string name = "MyVideo" + std::to_string(static_cast<long long>(id));
 
@@ -92,18 +94,32 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 	const string v_name = "View" + std::to_string(static_cast<long long>(id)) + ".avi";
 	VideoWriter video(v_name,CV_FOURCC('x','v','i','d'),10, Size(dWidth,dHeight),true);
 
-	int time1;
-	int time2;
 	int wait;
 	Mat frame;
 	for(;;) {
 		//GetSystemTime(&st3);
 		GetSystemTime(&st);
 		cap >> frame; // get a new frame from camera
+		if (frame.empty()) {
+			std::cout << "Unable to retrieve frame from video stream." << std::endl;
+			//VideoCapture cap(id); // open the video camera no. 0
+			//Sleep(1000);
+			//if (!cap.isOpened())  // if not success, exit program
+			//{
+			//	std::cout << id << " Cannot open the video cam" << std::endl;
+			//	return -1;
+			//}
+			//cap.set(CV_CAP_PROP_FRAME_WIDTH,640); //get the width of frames of the video
+			//cap.set(CV_CAP_PROP_FRAME_HEIGHT,480); //get the height of frames of the video
+			//cap >> frame;
+
+			continue;
+		}
+
 		//GetSystemTime(&st2);
 		//if(id == 0)
 		//	std::cout << "cap time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
-
+		
 		//GetSystemTime(&st);
 		imshow(name, frame);
 		//GetSystemTime(&st2);
@@ -111,7 +127,7 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 		//	std::cout << "imshow time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 
 		//GetSystemTime(&st);
-		//video.write(frame);
+		video.write(frame);
 		//GetSystemTime(&st2);
 		//if(id == 0)
 		///	std::cout << "write time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
@@ -138,13 +154,12 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 		if(c == 32)
 			break; // if ESC, break and quit
 		//GetSystemTime(&st2);
-
+		//std::cout << id << std::endl;
 		//if(id == 0)
 			//std::cout << "wait time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 		//GetSystemTime(&st4);
 		//std::cout << id << " loop time is: " << st4.wMilliseconds - st3.wMilliseconds << std::endl;
 	}
-
 	return 0;
 }
 
@@ -177,8 +192,8 @@ int main(int argc,char *argv[])
 			ExitProcess(3);
 		}
 	}
-	
-	Sleep(2000); // A wait is required to prevent artifacts
+	 
+	Sleep(3000); // A wait is required to prevent artifacts
 	imshow("BG", bg);
 	waitKey(1);
 
@@ -191,6 +206,7 @@ int main(int argc,char *argv[])
 		if (p == 0) {
 			std::cout << "Failed to close thread" << std::endl;
 		}
+		//std::cout << i << " thread closed" << std::endl;
 	}
 
 	std::cout  << "EXITING" << std::endl;
