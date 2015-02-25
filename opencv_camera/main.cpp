@@ -47,8 +47,8 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 //	SYSTEMTIME st4;
 
 	//GetDesktopResolution(horizontal, vertical);
-
-	VideoCapture cap(id); // open the video camera no. 0
+	VideoCapture cap; // open the video camera no. 0
+	cap.open(id);
 	if (!cap.isOpened())  // if not success, exit program
 	{
 		std::cout << id << " Cannot open the video cam" << std::endl;
@@ -127,7 +127,7 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 		//	std::cout << "imshow time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
 
 		//GetSystemTime(&st);
-		video.write(frame);
+		//video.write(frame);
 		//GetSystemTime(&st2);
 		//if(id == 0)
 		///	std::cout << "write time: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
@@ -137,16 +137,19 @@ DWORD WINAPI thread_func(LPVOID lpParameter)
 
 		wait = st2.wMilliseconds - st.wMilliseconds;
 		if (wait < 0)
-			wait = wait + 1000;
+			wait = wait + 1000; 
 		//int seconds = st2.wSecond - st.wSecond;
 
-		if (wait > 96)
-			wait = 96;
+		if (wait > 49)
+			wait = 49;
+		//if (wait > 97)
+		//	wait = 97;
 
 		//std::cout << id <<" wait time is: " << wait << std::endl;
 		//std::cout << "actial wait time is: " << 41-wait << std::endl;
 		//GetSystemTime(&st);
-		c = waitKey(97-wait); // wait 10 ms or for key stroke
+		c = waitKey(50-wait); // wait 10 ms or for key stroke
+		//c = waitKey(97-wait);
 		//GetSystemTime(&st2);
 
 		//std::cout << id <<  " wait key took: " << st2.wMilliseconds - st.wMilliseconds << std::endl;
@@ -186,6 +189,7 @@ int main(int argc,char *argv[])
 	for (int i=0; i < MAX_THREADS; i++)
 	{
 		hThreadArray[i] = CreateThread(NULL, 0, thread_func, new thread_data(i) , 0, 0);
+		//Sleep(1000);
 		if (hThreadArray[i] == NULL) 
 		{
 			//ErrorHandler(TEXT("CreateThread"));
@@ -193,7 +197,7 @@ int main(int argc,char *argv[])
 		}
 	}
 	 
-	Sleep(3000); // A wait is required to prevent artifacts
+	Sleep(2000); // A wait is required to prevent artifacts
 	imshow("BG", bg);
 	waitKey(1);
 
